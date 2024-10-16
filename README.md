@@ -3,3 +3,4 @@
 # Первая Лабораторная работа:
 https://github.com/Aleshka5/System-Design/tree/First-Task
 # Вторая Лабораторная работа: 
+https://github.com/Aleshka5/System-Design/tree/Second-Task
