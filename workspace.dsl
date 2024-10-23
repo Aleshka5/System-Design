@@ -12,7 +12,13 @@ workspace {
                 description "Визуальный интерфейс"
                 technology "HTML, CSS, JS"
             }
-            backend = container "API GateWay" {
+
+            user_api = container "API User changes" {
+                description "API, балансировщик нагрузки"
+                technology "Python"
+            }
+
+            business_api = container "API Business logic" {
                 description "API, балансировщик нагрузки"
                 technology "Python"
             }
@@ -22,44 +28,40 @@ workspace {
                 technology "PostgreSQL"
             }
 
-            db_cache = container "Cache" {
-                description "База данных для регулярных запросов"
-                technology "Redis"
-            }
         }
 
 
         user -> frontend "Использует"
-        frontend -> backend "Исполнение запросов"
-        backend -> db "Читает и записывает данные/Медленно"
-        backend -> db_cache "Читает и записывает данные/Быстро"
-        db_cache -> db "Запрашивает недостающие данные"
+        frontend -> user_api "Исполнение запросов изменения данных пользователя"
+        frontend -> business_api "Исполнение запросов работы мессенджера"
+        user_api -> db "Читает и записывает данные"
+        business_api -> db "Читает и записывает данные"
     }
 
     views {
 
         dynamic socialNetwork "uc01" "Запросы к DB"{
             autoLayout lr
-            frontend -> backend "Создание нового пользователя"
-            backend -> db "POST/new_user/ {login:<>,password:<>}"
+            frontend -> user_api "Создание нового пользователя"
+            user_api -> db "POST/new_user/ {login:<>,password:<>}"
 
-            frontend -> backend "Поиск пользователя по логину"
-            backend -> db "GET/get_user/login=<>"
+            frontend -> user_api "Поиск пользователя по логину"
+            user_api -> db "GET/get_user/login=<>"
 
-            frontend -> backend "Поиск пользователя по маске имя и фамилии"
-            backend -> db "GET/get_user_by_name/name=<>,sername=<>"
+            frontend -> user_api "Поиск пользователя по маске имя и фамилии"
+            user_api -> db "GET/get_user_by_name/name=<>,sername=<>"
 
-            frontend -> backend "Добавление записи на стену"
-            backend -> db "POST/create_post/ {login:<>, password:<>, content:<>}"
+            frontend -> user_api "Добавление записи на стену"
+            user_api -> db "POST/create_post/ {login:<>, password:<>, content:<>}"
 
-            frontend -> backend "Загрузка стены пользователя"            
-            backend -> db "GET/get_user_wall/login=<>"
+            frontend -> user_api "Загрузка стены пользователя"            
+            user_api -> db "GET/get_user_wall/login=<>"
 
-            frontend -> backend "Отправка сообщения пользователю"
-            backend -> db "POST/send_a_message/{login=<>,password=<>,target=<>,body=<>}"
+            frontend -> user_api "Отправка сообщения пользователю"
+            user_api -> db "POST/send_a_message/{login=<>,password=<>,target=<>,body=<>}"
 
-            frontend -> backend "Получение списка сообщения для пользователя"        
-            backend -> db "GET/get_chat/login=<>,target=<>"
+            frontend -> user_api "Получение списка сообщения для пользователя"        
+            user_api -> db "GET/get_chat/login=<>,target=<>"
 
         }
 
