@@ -9,7 +9,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 class Message(BaseModel):
     body: str
-    user_name: str
+    author: str
 
 
 # Модель данных для чатов
