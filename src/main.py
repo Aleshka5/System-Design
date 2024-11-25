@@ -5,6 +5,7 @@ from datetime import timedelta
 from hashlib import sha256
 
 import db
+import mongo
 from config import client_db, ACCESS_TOKEN_EXPIRE_MINUTES, Chat, User, Wall, Message
 from jwt_auth import pwd_context, create_access_token, get_current_client
 
@@ -181,8 +182,8 @@ async def create_user(user: User):
 
 @app.get("/debug_select")
 async def get_all_tables():
+    mongo.find_document_by_user_name(user_name="admin")
     await db.select_all_users()
-    await db.select_all_walls()
     await db.select_all_chats()
     await db.select_all_messages()
 

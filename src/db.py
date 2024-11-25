@@ -2,6 +2,7 @@ import json
 import asyncpg
 import asyncio
 import os
+import mongo
 from utils import print_table
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -32,24 +33,19 @@ def db_connection(func):
 
 @db_connection
 async def init(conn=None) -> None:
+    mongo.init()
+    # Удалил таблицу Walls
     await conn.execute(
         """
             DROP TABLE IF EXISTS Users CASCADE;
-            DROP TABLE IF EXISTS Walls CASCADE;
             DROP TABLE IF EXISTS Chats CASCADE;
             DROP TABLE IF EXISTS Messages CASCADE;
-            CREATE TABLE Walls (
-                id SERIAL PRIMARY KEY,
-                posts text
-            );
             CREATE TABLE Users (
                 id SERIAL PRIMARY KEY,
                 login char(128),
                 name varchar(64),
                 surname varchar(64),
-                hashed_password char(128),
-                wall_id integer,
-                FOREIGN KEY (wall_id) REFERENCES Walls(id)
+                hashed_password char(128)
             );
             CREATE TABLE Chats(
                 id SERIAL PRIMARY KEY,
@@ -69,14 +65,14 @@ async def init(conn=None) -> None:
         """
     )
     # TODO: Убрать после дебага работы БД.
+    # await conn.execute(
+    #     """
+    # INSERT INTO Walls (posts) VALUES ('Это страница админа, добро пожаловать!'),('Это страница второго админа, добро пожаловать!');
+    # """
+    # )
     await conn.execute(
         """
-    INSERT INTO Walls (posts) VALUES ('Это страница админа, добро пожаловать!'),('Это страница второго админа, добро пожаловать!');
-    """
-    )
-    await conn.execute(
-        """
-    INSERT INTO Users (login, hashed_password, name, surname, wall_id) VALUES ('admin','2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b','alex','fil',1),('admin2','2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b','alex2','fil2',2);
+    INSERT INTO Users (login, hashed_password, name, surname) VALUES ('admin','2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b','alex','fil'),('admin2','2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b','alex2','fil2');
     """
     )
     await conn.execute(
@@ -131,19 +127,21 @@ async def get_user_by_name(name, surname, conn=None):
 
 @db_connection
 async def add_new_post(post, login, conn=None):
-    response = await conn.execute(
-        """
-    INSERT INTO Walls (posts) VALUES ($1);
-    """,
-        post,
-    )
-    wall_id = dict(
-        await conn.fetchrow(
-            """
-    SELECT max(id) FROM Walls;
-    """
-        )
-    )
+    # response = await conn.execute(
+    #     """
+    # INSERT INTO Walls (posts) VALUES ($1);
+    # """,
+    #     post,
+    # )
+
+    # wall_id = dict(
+    #     await conn.fetchrow(
+    #         """
+    # SELECT max(id) FROM Walls;
+    # """
+    #     )
+    # )
+
     response = await conn.execute(
         """
     UPDATE Users SET wall_id = $1 WHERE login = $2;
@@ -266,7 +264,9 @@ async def select_all_messages(conn=None):
 
 @db_connection
 async def select_all_walls(conn=None):
-    response = await conn.fetch("""SELECT * FROM Walls;""")
+
+    # response = await conn.fetch("""SELECT * FROM Walls;""")
+
     response = [dict(record) for record in response]
 
     print_table([elem.values() for elem in response], list(response[0].keys()))
