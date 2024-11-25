@@ -2,7 +2,6 @@ import json
 import asyncpg
 import asyncio
 import os
-import mongo
 import time
 from utils import print_table
 
@@ -40,7 +39,6 @@ def db_connection(func):
 
 @db_connection
 async def init(conn=None) -> None:
-    mongo.init()
     # Удалил таблицу Walls
     await conn.execute(
         """

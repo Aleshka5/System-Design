@@ -1,12 +1,11 @@
 import os
+import traceback
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import DuplicateKeyError
 from functools import wraps
 
 # Настройка подключения
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo:27017/my_database")
-# MONGO_URI = "mongodb://admin:example@mongo:27017/"
-print("!", MONGO_URI, "!")
 DATABASE_NAME = "my_database"
 COLLECTION_NAME = "my_collection"
 
@@ -22,6 +21,9 @@ def mongo_connection(func):
         try:
             result = func(db, *args, **kwargs)
 
+        except:
+            result = None
+            print(traceback.format_exc())
         finally:
             client.close()
 
@@ -59,7 +61,6 @@ def find_document_by_user_name(db, user_name):
     """Поиск документа по полю user_name."""
     collection = db[COLLECTION_NAME]
     document = collection.find_one({"user_name": user_name})
-
     if document:
         print(document)
         return document
@@ -69,16 +70,23 @@ def find_document_by_user_name(db, user_name):
 
 @mongo_connection
 def init(db):
-    sample_document = {
-        [
-            {"user_name": "admin", "posts": ["My first post", "My second post"]},
-            {
-                "user_name": "admin2",
-                "posts": ["My first post too", "My second post too"],
-            },
-        ]
+    cllection = db[COLLECTION_NAME]
+
+    new_document = {
+        "_id": 1,
+        "user_name": "admin",
+        "posts": ["My first post", "My second post"],
     }
-    insert_document(db, sample_document)
+
+    cllection.insert_one(new_document)
+
+    new_document2 = {
+        "_id": 2,
+        "user_name": "admin2",
+        "posts": ["My first post too", "My second post too"],
+    }
+
+    cllection.insert_one(new_document2)
 
 
 # Пример использования

@@ -5,6 +5,7 @@ from datetime import timedelta
 from hashlib import sha256
 
 import db
+import traceback
 import mongo
 from config import client_db, ACCESS_TOKEN_EXPIRE_MINUTES, Chat, User, Wall, Message
 from jwt_auth import pwd_context, create_access_token, get_current_client
@@ -13,6 +14,10 @@ from jwt_auth import pwd_context, create_access_token, get_current_client
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db.init()
+    try:
+        mongo.init()
+    except:
+        print(traceback.format_exc())
     yield
 
 
