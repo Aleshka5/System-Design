@@ -3,6 +3,7 @@ import asyncpg
 import asyncio
 import os
 import mongo
+import time
 from utils import print_table
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -14,7 +15,13 @@ def db_connection(func):
     """
 
     async def wrapper(*args, **kwargs):
-        conn = await asyncpg.connect(DATABASE_URL)
+        while True:
+            try:
+                conn = await asyncpg.connect(DATABASE_URL)
+                break
+            except:
+                time.sleep(1)
+
         try:
             async with conn.transaction():
                 response = await func(*args, **kwargs, conn=conn)
