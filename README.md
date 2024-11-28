@@ -6,3 +6,5 @@ https://github.com/Aleshka5/System-Design/tree/First-Task
 https://github.com/Aleshka5/System-Design/tree/Second-Task
 # Третья Лабораторная работа: 
 https://github.com/Aleshka5/System-Design/tree/Third-Task
+# Четвёртая Лабораторная работа: 
+https://github.com/Aleshka5/System-Design/tree/Fourth-Task
