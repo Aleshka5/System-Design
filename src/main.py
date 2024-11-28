@@ -9,13 +9,15 @@ import traceback
 import mongo
 from config import client_db, ACCESS_TOKEN_EXPIRE_MINUTES, Chat, User, Wall, Message
 from jwt_auth import pwd_context, create_access_token, get_current_client
+import redis_cache as redis
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await db.init()
     try:
+        await db.init()
         mongo.init()
+        await redis.init()
     except:
         print(traceback.format_exc())
     yield
@@ -24,11 +26,28 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+async def get_user_with_cache(login):
+    redis_response = await redis.check_user_request(login)
+
+    if "status" not in redis_response:
+        print("We found him in Redis!")
+        return redis_response
+
+    print("Try to find him in PostgreSQL...")
+    sql_response = await db.get_user(login)
+    if "status" not in sql_response:
+        print("We found him in PostgreSQL! Lets write him to Redis!")
+        await redis.add_user_ttl(login, json_data=sql_response)
+        print("He has been written to Redis!")
+
+    return sql_response
+
+
 # Маршрут для получения токена
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     password_check = False
-    response = await db.get_user(form_data.username)
+    response = await get_user_with_cache(form_data.username)
 
     if "status" not in response.keys():
         password = response["hashed_password"].strip()
@@ -59,9 +78,9 @@ async def send_message(
     current_user: str = Depends(get_current_client),
 ):
     # if login in client_db.keys() and target_login in client_db.keys():
-    if "status" not in await db.get_user(login) and "status" not in await db.get_user(
-        target_login
-    ):
+    if "status" not in await get_user_with_cache(
+        login
+    ) and "status" not in await get_user_with_cache(target_login):
         # Есть ли у пользователей чат
         response = await db.get_chats(login, target_login)
 
@@ -95,7 +114,7 @@ async def send_message(
 async def get_chat(
     login: str, target_login: str, current_user: str = Depends(get_current_client)
 ):
-    response = await db.get_user(login)
+    response = await get_user_with_cache(login)
 
     if "status" not in response.keys():
         response = await db.get_chats(login, target_login)
@@ -117,7 +136,7 @@ async def get_chat(
 # GET /users/{user_id}/wall - Получить стену пользователя (требует аутентификации)
 @app.get("/users/{login}/wall", response_model=Wall)
 async def get_wall(login: str, current_user: str = Depends(get_current_client)):
-    response = await db.get_user(login)
+    response = await get_user_with_cache(login)
 
     if "status" not in response.keys():
         response = mongo.find_document_by_user_name(login)
@@ -135,7 +154,7 @@ async def get_wall(login: str, current_user: str = Depends(get_current_client)):
 async def create_post(
     login: str, post_txt: str, current_user: str = Depends(get_current_client)
 ):
-    response = await db.get_user(login)
+    response = await get_user_with_cache(login)
 
     if "status" not in response.keys():
         response = mongo.insert_document({"user_name": login, "posts": [post_txt]})
@@ -162,7 +181,7 @@ async def get_user_by_name(
 # GET /users/{user_id} - Получить пользователя по логину (требует аутентификации)
 @app.get("/users/{login}", response_model=User)
 async def get_user(login: str, current_user: str = Depends(get_current_client)):
-    response = await db.get_user(login)
+    response = await get_user_with_cache(login)
 
     if "status" not in response.keys():
         return User.model_validate(response)
@@ -192,6 +211,15 @@ async def get_all_tables():
     await db.select_all_users()
     await db.select_all_chats()
     await db.select_all_messages()
+    await redis.add_user_ttl(
+        "admin",
+        {
+            "name": "alex",
+            "surname": "fil",
+            "password": sha256("secret".encode()).hexdigest(),
+        },
+    )
+    await redis.check_user_request("admin")
 
 
 if __name__ == "__main__":

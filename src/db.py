@@ -47,7 +47,7 @@ async def init(conn=None) -> None:
             DROP TABLE IF EXISTS Messages CASCADE;
             CREATE TABLE Users (
                 id SERIAL PRIMARY KEY,
-                login char(128),
+                login char(128) UNIQUE,
                 name varchar(64),
                 surname varchar(64),
                 hashed_password char(128)
@@ -62,7 +62,7 @@ async def init(conn=None) -> None:
             CREATE TABLE Messages(
                 id SERIAL PRIMARY KEY,
                 chat_id integer,
-                author char(128),
+                author varchar(64),
                 body text,
                 datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (chat_id) REFERENCES Chats(id)
