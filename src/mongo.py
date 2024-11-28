@@ -46,8 +46,11 @@ def insert_document(db, document):
     collection = db[COLLECTION_NAME]
 
     try:
-        inserted_id = collection.insert_one(document).inserted_id
-        return f"Документ добавлен с _id: {inserted_id}"
+        collection.update_one(
+            {"user_name": document["user_name"]},
+            {"$push": {"posts": {"$each": document["posts"]}}},
+        )
+        return f"Документ добавлен с _id: {document['user_name']}"
 
     except DuplicateKeyError:
         return {
@@ -70,10 +73,11 @@ def find_document_by_user_name(db, user_name):
 
 @mongo_connection
 def init(db):
+    create_index()
+
     cllection = db[COLLECTION_NAME]
 
     new_document = {
-        "_id": 1,
         "user_name": "admin",
         "posts": ["My first post", "My second post"],
     }
@@ -81,7 +85,6 @@ def init(db):
     cllection.insert_one(new_document)
 
     new_document2 = {
-        "_id": 2,
         "user_name": "admin2",
         "posts": ["My first post too", "My second post too"],
     }

@@ -120,10 +120,10 @@ async def get_wall(login: str, current_user: str = Depends(get_current_client)):
     response = await db.get_user(login)
 
     if "status" not in response.keys():
-        response = await db.get_wall(login)
+        response = mongo.find_document_by_user_name(login)
 
         if "status" not in response.keys():
-            return Wall(posts=[response["posts"]])
+            return Wall(posts=response["posts"])
 
         raise HTTPException(status_code=404, detail="Wall not found")
 
@@ -138,7 +138,7 @@ async def create_post(
     response = await db.get_user(login)
 
     if "status" not in response.keys():
-        response = await db.add_new_post(post_txt, login)
+        response = mongo.insert_document({"user_name": login, "posts": [post_txt]})
 
         if "status" not in response:
             return Wall(posts=[post_txt])
@@ -188,6 +188,7 @@ async def create_user(user: User):
 @app.get("/debug_select")
 async def get_all_tables():
     mongo.find_document_by_user_name(user_name="admin")
+    mongo.find_document_by_user_name(user_name="admin2")
     await db.select_all_users()
     await db.select_all_chats()
     await db.select_all_messages()
