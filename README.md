@@ -1,12 +1,14 @@
 # System-Design
 Репозиторий Филенкова Алексея Дмитриевича для выполненных работ по курсу Системный Дизайн
-# Первая Лабораторная работа:
+# Лабораторная работа 1:
 https://github.com/Aleshka5/System-Design/tree/First-Task
-# Вторая Лабораторная работа: 
+# Лабораторная работа 2: 
 https://github.com/Aleshka5/System-Design/tree/Second-Task
-# Третья Лабораторная работа: 
+# Лабораторная работа 3: 
 https://github.com/Aleshka5/System-Design/tree/Third-Task
-# Четвёртая Лабораторная работа: 
+# Лабораторная работа 4: 
 https://github.com/Aleshka5/System-Design/tree/Fourth-Task
-# Пятая Лабораторная работа: 
+# Лабораторная работа 5: 
 https://github.com/Aleshka5/System-Design/tree/Fifth-Task
+# Лабораторная работа 6: 
+https://github.com/Aleshka5/System-Design/tree/Sixth-Task
