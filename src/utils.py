@@ -51,3 +51,11 @@ def print_table(table_list, columns_list):
             )
         print("")
     return None
+
+
+# Функция для обработки результатов доставки сообщения
+def delivery_report(err, msg):
+    if err is not None:
+        print(f"User creation failed: {err}")
+    else:
+        print(f"User created {msg.topic()} [{msg.partition()}]")

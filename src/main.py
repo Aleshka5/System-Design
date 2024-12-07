@@ -7,9 +7,12 @@ from hashlib import sha256
 import db
 import traceback
 import mongo
+import json
+import redis_cache as redis
 from config import client_db, ACCESS_TOKEN_EXPIRE_MINUTES, Chat, User, Wall, Message
 from jwt_auth import pwd_context, create_access_token, get_current_client
-import redis_cache as redis
+from confluent_kafka import Producer
+from utils import delivery_report
 
 
 @asynccontextmanager
@@ -23,6 +26,13 @@ async def lifespan(app: FastAPI):
     yield
 
 
+# Конфигурация Kafka Producer
+conf = {"bootstrap.servers": "kafka1:9092,kafka2:9092"}  # Адрес Kafka брокера
+
+# Создание Producer
+producer = Producer(**conf)
+
+# Создание приложения
 app = FastAPI(lifespan=lifespan)
 
 
@@ -192,15 +202,25 @@ async def get_user(login: str, current_user: str = Depends(get_current_client)):
 # POST /users - Создать нового пользователя
 @app.post("/users", response_model=User)
 async def create_user(user: User):
-    if user.login in client_db.keys():
+    response = await get_user_with_cache(user.login)
+    print(f"!!! {response} !!!")
+
+    if "status" not in response.keys():
         raise HTTPException(status_code=404, detail="User already exist")
 
     else:
-        # Предполагается, что при регистрации пользователь передаст не хэшированный пароль
-        # (По правильному, конечно, надо сразу на стороне клиента пароль хэшировать)
         user.hashed_password = sha256(user.hashed_password.encode()).hexdigest()
-        await db.add_new_user(user.login, user.hashed_password, user.name, user.surname)
-
+        # await db.add_new_user(user.login, user.hashed_password, user.name, user.surname)
+        try:
+            # user_data = {"id": i, "name": "John Doe", "email": "john.doe@example.com"}
+            producer.produce(
+                topic="user_topic",  # Название топика
+                value=json.dumps(user.__dict__),
+                callback=delivery_report,
+            )
+            producer.flush()  # Ожидание доставки всех сообщений
+        except Exception as e:
+            print(f"Error: {e}")
     return user
 
 
